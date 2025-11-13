@@ -3,12 +3,8 @@
 
 SimpleADC_DMA dma;
 
-void onSamples(uint16_t* samples, size_t count) {
-    // Exemplo: imprime só a primeira amostra de cada bloco
-    IIKit.WSerial.print("Bloco com ");
-    IIKit.WSerial.print(count);
-    IIKit.WSerial.print(" amostras. Primeira = ");
-    IIKit.WSerial.println(samples[0]);
+void osciloscope(uint16_t* samples, size_t count) {
+   IIKit.WSerial.plot("adcValue", (uint32_t)10, samples, count);
 }
 
 void setup() {
@@ -18,7 +14,7 @@ void setup() {
                   1000  //1000 amostras → ~1 callbacks/s
                    )
         ) IIKit.WSerial.println("Falha ao iniciar SimpleADC_DMA");
-    else dma.onData(onSamples);
+    else dma.onData(osciloscope);
 }
 
 void loop() {

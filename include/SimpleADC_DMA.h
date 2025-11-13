@@ -17,9 +17,9 @@ public:
           _running(false) {}
 
     bool begin(adc1_channel_t adc_channel,
-               int sample_rate,
-               size_t dma_block_len,
-               i2s_port_t port = I2S_NUM_0)
+            int sample_rate,
+            size_t dma_block_len,
+            i2s_port_t port = I2S_NUM_0)
     {
         _adc_channel   = adc_channel;
         _sample_rate   = sample_rate;
@@ -32,18 +32,22 @@ public:
 
         // --- Configura ADC1 ---
         adc1_config_width(ADC_WIDTH_BIT_12);
-        esp_err_t err = adc1_config_channel_atten(_adc_channel, ADC_ATTEN_DB_11);
+        esp_err_t err = adc1_config_channel_atten(_adc_channel, ADC_ATTEN_DB_12);
         if (err != ESP_OK) {
             return false;
         }
 
         // --- Configura I2S em modo ADC interno ---
         i2s_config_t i2s_config = {};
-        i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_ADC_BUILT_IN);
+        i2s_config.mode = (i2s_mode_t)(
+            I2S_MODE_MASTER |
+            I2S_MODE_RX |              // <- ESSENCIAL PARA ADC + DMA
+            I2S_MODE_ADC_BUILT_IN
+        );
         i2s_config.sample_rate = _sample_rate;
         i2s_config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
         i2s_config.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT;
-        i2s_config.communication_format = I2S_COMM_FORMAT_I2S_MSB;
+        i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S;
         i2s_config.dma_buf_count = 4;
         i2s_config.dma_buf_len = _dma_block_len;
         i2s_config.use_apll = false;
@@ -63,7 +67,6 @@ public:
 
         _running = true;
 
-        // Pinar a task no core 0 pra evitar conflitos com outras tasks
         BaseType_t res = xTaskCreatePinnedToCore(
             taskThunk,
             "SimpleADC_DMA_Task",
