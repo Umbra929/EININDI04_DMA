@@ -1,23 +1,26 @@
-#include <iikit.h>      // Biblioteca base do framework Arduino
-#include "util/AdcDmaEsp.h" // Classe para configuração do ADC e DMA
+#include <iikit.h>
+#include "SimpleADC_DMA.h"
 
-uint32_t count = 0; 
+SimpleADC_DMA dma;
 
-void osciloscope(const int16_t *y, size_t ylen)
-{
-    // for (size_t i = 0; i < ylen; i++) {
-        IIKit.WSerial.plot("adcValue", (uint32_t)(1000*count++), y[i]);
-    // }
-    IIKit.disp.setText(2, ("P1:" + String(y[ylen-1])).c_str());
-} 
-
-void setup()
-{
-    adcDmaSetup(ADC1_CHANNEL_0, 1000UL, osciloscope, 100000UL, ADC_WIDTH_BIT_12);
+void onSamples(uint16_t* samples, size_t count) {
+    // Exemplo: imprime só a primeira amostra de cada bloco
+    IIKit.WSerial.print("Bloco com ");
+    IIKit.WSerial.print(count);
+    IIKit.WSerial.print(" amostras. Primeira = ");
+    IIKit.WSerial.println(samples[0]);
 }
 
-void loop()
-{
+void setup() {
+    IIKit.setup();
+    if (!dma.begin(ADC1_CHANNEL_6, 
+                   1000,  //1 kHz 
+                  1000  //1000 amostras → ~1 callbacks/s
+                   )
+        ) IIKit.WSerial.println("Falha ao iniciar SimpleADC_DMA");
+    else dma.onData(onSamples);
+}
+
+void loop() {
     IIKit.loop();
-    adcDmaLoop();
 }
